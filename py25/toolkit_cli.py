@@ -61,9 +61,11 @@ APP_NAME = "Toolkit CLI"
 DATA_DIR = Path(__file__).with_name("data")
 DATA_DIR.mkdir(exist_ok=True)
 
+
 # ---------------------------------------------------------------------------
 # Utilidades gerais
 # ---------------------------------------------------------------------------
+
 
 def clear() -> None:
     os.system("cls" if os.name == "nt" else "clear")
@@ -131,7 +133,10 @@ def pretty_table(rows: List[List[Any]], headers: Optional[List[str]] = None) -> 
 # ---------------------------------------------------------------------------
 # 1) Tasks — Gerenciador de tarefas
 # ---------------------------------------------------------------------------
+
+
 TASKS_PATH = DATA_DIR / "tasks.json"
+
 
 @dataclass
 class Task:
@@ -977,5 +982,6 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 
 
