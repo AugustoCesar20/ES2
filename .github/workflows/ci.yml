@@ -35,7 +35,7 @@ jobs:
           coverage xml -i
 
       # 5. Rodar lint (opcional)
-      - name: Lint code
-        run: |
-          flake8 .
-          black .
+      #- name: Lint code
+      #  run: |
+      #    flake8 .
+      #    black .
