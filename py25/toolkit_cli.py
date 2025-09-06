@@ -104,7 +104,8 @@ def confirm(prompt: str = "Confirma? [s/N] ") -> bool:
     return v in {"s", "sim", "y", "yes"}
 
 
-def pretty_table(rows: List[List[Any]], headers: Optional[List[str]] = None) -> str:
+def pretty_table(rows: List[List[Any]], 
+                     headers: Optional[List[str]] = None) -> str:
     if not rows and not headers:
         return "(vazio)"
     cols = len(headers) if headers else len(rows[0]) if rows else 0
@@ -119,14 +120,16 @@ def pretty_table(rows: List[List[Any]], headers: Optional[List[str]] = None) -> 
             widths[i] = max(widths[i], len(cell))
     lines = []
     if headers:
-        hdr = " | ".join(cell.ljust(widths[i]) for i, cell in enumerate(data[0]))
+        hdr = " | ".join(cell.ljust(widths[i]) 
+                         for i, cell in enumerate(data[0]))
         lines.append(hdr)
         lines.append("-+-".join("-" * w for w in widths))
         body = data[1:]
     else:
         body = data
     for row in body:
-        lines.append(" | ".join(cell.ljust(widths[i]) for i, cell in enumerate(row)))
+        lines.append(" | ".join(cell.ljust(widths[i]) 
+                                for i, cell in enumerate(row)))
     return "\n".join(lines)
 
 
@@ -982,6 +985,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 
 
 
