@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "title": "Comprar leite",
+    "priority": 2,
+    "due": "2025-09-01",
+    "done": false,
+    "tags": [
+      "pessoal",
+      "supermercado"
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Enviar relatório",
+    "priority": 1,
+    "due": "2025-08-31",
+    "done": true,
+    "tags": [
+      "trabalho"
+    ]
+  }
+]

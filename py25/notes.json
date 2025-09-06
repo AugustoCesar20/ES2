@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1,
+    "title": "Resumo TCC",
+    "body": "Anotar estrutura: introdução, metodologia, resultados, conclusão.",
+    "tags": [
+      "tcc",
+      "ai"
+    ],
+    "created_at": "2025-08-30T10:00:00"
+  },
+  {
+    "id": 2,
+    "title": "Idéia para projeto",
+    "body": "Explorar fine-tuning em modelos pequenos.",
+    "tags": [
+      "projeto"
+    ],
+    "created_at": "2025-08-29T14:20:00"
+  }
+]
