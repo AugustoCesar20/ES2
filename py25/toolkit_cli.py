@@ -129,7 +129,6 @@ def pretty_table(rows: List[List[Any]], headers: Optional[List[str]] = None) -> 
         lines.append(" | ".join(cell.ljust(widths[i]) for i, cell in enumerate(row)))
     return "\n".join(lines)
 
-
 # ---------------------------------------------------------------------------
 # 1) Tasks — Gerenciador de tarefas
 # ---------------------------------------------------------------------------
@@ -289,7 +288,6 @@ class HabitTracker:
         self.path = path
         self.habits: Dict[str, Habit] = {}
         self._load()
-
     def _load(self) -> None:
         if self.path.exists():
             try:
@@ -982,8 +980,3 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-
-
-
-
