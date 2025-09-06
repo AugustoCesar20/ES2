@@ -33,8 +33,9 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@master
         with:
           args: >
-            -Dsonar.projectKey=SEU_USUARIO_SEU_REPO
-            -Dsonar.organization=SEU_ORGANIZATION
+            -Dsonar.projectKey=AugustoCesar20_ES2
+            -Dsonar.organization=augustocesar20
             -Dsonar.python.version=3.12
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
