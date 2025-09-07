@@ -28,9 +28,3 @@ jobs:
         run: |
           coverage run -m pytest -v test_toolkit_cli.py
           coverage report -m
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: coverage.xml
