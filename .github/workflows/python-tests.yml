@@ -1,4 +1,4 @@
-name: Python Tests and SonarCloud
+name: Python Tests and Sonar
 
 on:
   push:
@@ -31,11 +31,7 @@ jobs:
           coverage xml -o coverage.xml
           coverage report -m
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        with:
-          organization: "AugustoCesar20"
-          projectKey: "ES2"
-          projectName: "ES2"
+      - name: Run SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
