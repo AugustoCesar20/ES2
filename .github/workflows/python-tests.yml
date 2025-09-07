@@ -1,4 +1,4 @@
-name: Python Tests and Sonar
+name: Python Tests and SonarQube Scan
 
 on:
   push:
@@ -7,30 +7,34 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  test-and-sonar:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Fazer checkout do código
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2. Configurar Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 
+      # 3. Instalar dependências
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install coverage
 
+      # 4. Rodar testes com cobertura
       - name: Run tests with coverage
         run: |
           coverage run -m pytest -v py25/test_toolkit_cli.py
           coverage xml -o coverage.xml
           coverage report -m
 
+      # 5. Rodar SonarQube scan
       - name: Run SonarQube scan
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
