@@ -30,19 +30,13 @@ jobs:
       # 4. Rodar testes com cobertura
       - name: Run tests with coverage
         run: |
-          PYTHONPATH=py25 coverage run -m pytest py25/tests
+          export PYTHONPATH=$(pwd)  # garante que o código seja encontrado
+          coverage run -m pytest -v py25/tests/test_toolkit_cli.py
           coverage xml -o coverage.xml
           coverage report -m
 
       # 5. Rodar SonarQube scan
       - name: Run SonarQube scan
         uses: SonarSource/sonarqube-scan-action@v5.0.0
-        with:
-          projectBaseDir: .
-          args: >
-            -Dsonar.projectKey=AugustoCesar20_ES2
-            -Dsonar.organization=AugustoCesar20
-            -Dsonar.sources=py25
-            -Dsonar.python.coverage.reportPaths=coverage.xml
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
