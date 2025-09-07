@@ -27,4 +27,5 @@ jobs:
       - name: Run tests with coverage
         run: |
           coverage run -m pytest -v py25/test_toolkit_cli.py
+          coverage xml -o coverage.xml
           coverage report -m
