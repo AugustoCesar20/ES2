@@ -1,0 +1,6 @@
+sonar.projectKey=ES2
+sonar.organization=AugustoCesar20
+sonar.projectName=ES2
+sonar.sources=py25
+sonar.python.coverage.reportPaths=coverage.xml
+sonar.host.url=https://sonarcloud.io
