@@ -11,25 +11,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Pegar o código do repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Configurar Python
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 
-      # 3. Instalar dependências
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. Rodar testes com cobertura
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest
+          PYTHONPATH=py25 coverage run -m pytest py25/tests
           coverage report -m
-          coverage xml -i
+          coverage xml -o coverage.xml
