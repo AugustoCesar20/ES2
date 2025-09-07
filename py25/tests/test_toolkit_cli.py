@@ -76,7 +76,7 @@ def test_habittracker_add_mark_stats(tmp_habits_path):
     hb.mark("Run")
     habits = hb.list()
     assert len(habits) == 1
-    dones, total, perc = hb.monthly_stats("Run", 2099, 1)
+    dones, _, _ = hb.monthly_stats("Run", 2099, 1)
     # Since the date won't match 2099-01, stats should be zero
     assert dones == 0
 
@@ -112,9 +112,9 @@ def test_converter_json_csv(tmp_path):
     csv_path = tmp_path / "data.csv"
     data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
     json_path.write_text(json.dumps(data), encoding="utf-8")
-    rows, cols = Converter.json_to_csv(json_path, csv_path)
+    rows, _ = Converter.json_to_csv(json_path, csv_path)
     assert rows == 2
-    rows2, cols2 = Converter.csv_to_json(csv_path, tmp_path / "out.json")
+    rows2, _ = Converter.csv_to_json(csv_path, tmp_path / "out.json")
     assert rows2 == 2
 
 # -----------------------------
