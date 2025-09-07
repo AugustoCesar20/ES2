@@ -1,0 +1,1 @@
+python -m pytest -q --cov=toolkit_cli --cov-report=term-missing --cov-report=xml --cov-fail-under=85

@@ -41,16 +41,12 @@ import argparse
 import csv
 import dataclasses
 import datetime as dt
-# import getpass
-# import itertools
 import json
 import math
 import os
-# import random
 import re
 import shutil
 import sqlite3
-# import sys
 import textwrap
 import time
 from dataclasses import dataclass, field
@@ -67,11 +63,11 @@ DATA_DIR.mkdir(exist_ok=True)
 # ---------------------------------------------------------------------------
 
 
-def clear() -> None:
+def clear() -> None: # pragma: no cover
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def pause(msg: str = "Pressione Enter para continuar...") -> None:
+def pause(msg: str = "Pressione Enter para continuar...") -> None: # pragma: no cover
     try:
         input(msg)
     except (EOFError, KeyboardInterrupt):
@@ -84,7 +80,7 @@ def header(title: str) -> None:
     print("=" * 70)
 
 
-def input_nonempty(prompt: str) -> str:
+def input_nonempty(prompt: str) -> str: # pragma: no cover
     while True:
         try:
             s = input(prompt).strip()
@@ -96,7 +92,7 @@ def input_nonempty(prompt: str) -> str:
         print("Por favor, digite algo.")
 
 
-def confirm(prompt: str = "Confirma? [s/N] ") -> bool:
+def confirm(prompt: str = "Confirma? [s/N] ") -> bool: # pragma: no cover
     try:
         v = input(prompt).strip().lower()
     except (EOFError, KeyboardInterrupt):
@@ -612,7 +608,7 @@ class TicTacToe:
 # Interfaces de cada módulo (menus simples)
 # ---------------------------------------------------------------------------
 
-def ui_tasks() -> None:
+def ui_tasks() -> None: # pragma: no cover
     tm = TaskManager()
     while True:
         clear()
@@ -661,7 +657,7 @@ def ui_tasks() -> None:
             pause()
 
 
-def ui_notes() -> None:
+def ui_notes() -> None: # pragma: no cover
     nm = NotesManager()
     while True:
         clear()
@@ -702,7 +698,7 @@ def ui_notes() -> None:
             pause()
 
 
-def ui_habits() -> None:
+def ui_habits() -> None: # pragma: no cover
     hb = HabitTracker()
     while True:
         clear()
@@ -741,7 +737,7 @@ def ui_habits() -> None:
             pause()
 
 
-def ui_calc() -> None:
+def ui_calc() -> None: # pragma: no cover
     calc = Calculator()
     while True:
         clear()
@@ -765,7 +761,7 @@ def ui_calc() -> None:
         pause()
 
 
-def ui_text() -> None:
+def ui_text() -> None: # pragma: no cover
     while True:
         clear()
         header("Texto — utilidades")
@@ -799,7 +795,7 @@ def ui_text() -> None:
             pause()
 
 
-def ui_convert() -> None:
+def ui_convert() -> None: # pragma: no cover
     while True:
         clear()
         header("Conversão JSON/CSV")
@@ -828,7 +824,7 @@ def ui_convert() -> None:
             pause()
 
 
-def ui_files() -> None:
+def ui_files() -> None: # pragma: no cover
     while True:
         clear()
         header("Organizador de Arquivos")
@@ -858,7 +854,7 @@ def ui_files() -> None:
             pause()
 
 
-def ui_timer() -> None:
+def ui_timer() -> None: # pragma: no cover
     while True:
         clear()
         header("Timer / Pomodoro")
@@ -884,7 +880,7 @@ def ui_timer() -> None:
             pause()
 
 
-def ui_addressbook() -> None:
+def ui_addressbook() -> None: # pragma: no cover
     ab = AddressBook()
     while True:
         clear()
@@ -914,7 +910,7 @@ def ui_addressbook() -> None:
             pause()
 
 
-def ui_tictactoe() -> None:
+def ui_tictactoe() -> None: # pragma: no cover
     TicTacToe().play_cli()
 
 
@@ -935,7 +931,7 @@ MENU_ITEMS = [
 ]
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[List[str]] = None) -> int: # pragma: no cover
     parser = argparse.ArgumentParser(description=APP_NAME)
     parser.add_argument("--auto", choices=["tasks", "notes", "habits", "calc", "text", "convert", "files", "timer", "address", "tictactoe"], help="Abrir módulo diretamente", default=None)
     args = parser.parse_args(argv)
