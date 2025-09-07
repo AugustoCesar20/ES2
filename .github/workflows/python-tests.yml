@@ -30,7 +30,7 @@ jobs:
       # 4. Rodar testes com cobertura
       - name: Run tests with coverage
         run: |
-          export PYTHONPATH=$(pwd)  # garante que o código seja encontrado
+          export PYTHONPATH=$(pwd)/py25  # garante que toolkit_cli.py seja encontrado
           coverage run -m pytest -v py25/tests/test_toolkit_cli.py
           coverage xml -o coverage.xml
           coverage report -m
