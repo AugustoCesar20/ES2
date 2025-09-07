@@ -23,7 +23,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install coverage sonar-scanner
+          pip install coverage
 
       - name: Run tests with coverage
         run: |
@@ -32,12 +32,10 @@ jobs:
           coverage report -m
 
       - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          organization: "AugustoCesar20"
+          projectKey: "ES2"
+          projectName: "ES2"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          sonar-scanner \
-            -Dsonar.projectKey=ES2 \
-            -Dsonar.organization=AugustoCesar20 \
-            -Dsonar.sources=. \
-            -Dsonar.python.coverage.reportPaths=coverage.xml \
-            -Dsonar.login=$SONAR_TOKEN
