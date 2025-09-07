@@ -56,7 +56,34 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 APP_NAME = "Toolkit CLI"
 DATA_DIR = Path(__file__).with_name("data")
 DATA_DIR.mkdir(exist_ok=True)
+TASK_MENU = "1) Listar\n2) Adicionar\n3) Alternar status\n4) Editar\n5) Excluir\n0) Voltar"
+TASK_HEADERS = ["ID", "OK", "Título", "Pri", "Prazo", "Tags"]
+MSG_INVALID = "Opção inválida."
+MSG_NOT_FOUND = "Não encontrado"
+# ---- Labels e mensagens compartilhadas ----
+UI_LBL_TITLE = "Título"             
 
+# ---- Notas (menu e headers) ----
+NOTE_MENU = "1) Listar\n2) Adicionar\n3) Excluir\n4) Buscar\n0) Voltar"
+NOTE_HEADERS_LIST = ["ID", UI_LBL_TITLE, "Tags", "Criado"]
+NOTE_HEADERS_SEARCH = ["ID", UI_LBL_TITLE, "Prévia", "Tags"]
+# ---- Hábitos (menu/headers) ----
+HABIT_MENU = "1) Listar\n2) Adicionar hábito\n3) Marcar hoje\n4) Estatísticas do mês\n0) Voltar"
+HABIT_HEADERS = ["Hábito", "Hoje", "Dias marcados"]
+
+# ---- Texto (menu/headers) ----
+TEXT_MENU = (
+    "1) Contagem de palavras/linhas/caracteres\n"
+    "2) Verificar palíndromo\n"
+    "3) Procurar anagramas\n"
+    "0) Voltar"
+)
+TEXT_HEADERS = ["Métrica", "Valor"]
+TEXT_NONE = "(nenhum)"  
+# ---- Files (menu/headers/mensagens) ----
+FILES_MENU = "1) Ver plano\n2) Aplicar (mover)\n0) Voltar"
+FILES_HEADERS = ["Extensão", "Qtd", "Exemplos"]
+FILES_CONFIRM_MSG = "Isso moverá arquivos para subpastas por extensão. Continuar?"
 
 # ---------------------------------------------------------------------------
 # Utilidades gerais
@@ -103,7 +130,13 @@ def confirm(prompt: str = "Confirma? [s/N] ") -> bool: # pragma: no cover
 def pretty_table(rows: List[List[Any]], headers: Optional[List[str]] = None) -> str:
     if not rows and not headers:
         return "(vazio)"
-    cols = len(headers) if headers else len(rows[0]) if rows else 0
+    if headers:
+        cols = len(headers)
+    elif rows:
+        cols = len(rows[0])
+    else:
+        cols = 0
+
     widths = [0] * cols
     data = []
     if headers:
@@ -546,6 +579,27 @@ class TicTacToe:
         self.board = [" "] * 9
         self.current = "X"
 
+    def _prompt_position(self) -> tuple[bool, Optional[int]]:  # pragma: no cover
+        """
+        Retorna (continuar, posicao).
+        - (False, None) => sair (q/s/EOF/Ctrl+C)
+        - (True, None)  => entrada inválida, repetir loop
+        - (True, pos)   => posição válida (0..8)
+        """
+        try:
+            v = input(f"Jogador {self.current}, posição (1-9) ou 'q' para sair: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nSaindo...")
+            return False, None
+
+        low = v.lower()
+        if low in {"q", "s", "sair"}:
+            return False, None
+        if not v.isdigit() or not (1 <= int(v) <= 9):
+            print("Entrada inválida.")
+            return True, None
+        return True, int(v) - 1
+
     def draw(self) -> None:
         b = self.board
         print(f" {b[0]} | {b[1]} | {b[2]} ")
@@ -574,167 +628,221 @@ class TicTacToe:
             return "empate"
         return None
 
-    def play_cli(self) -> None:
+    def play_cli(self) -> None:  # pragma: no cover
         clear()
         header("Jogo da Velha — Use posições 1..9")
         self.draw()
         while True:
-            try:
-                v = input(f"Jogador {self.current}, posição (1-9) ou 'q' para sair: ").strip()
-            except (EOFError, KeyboardInterrupt):
-                print("\nSaindo...")
+            continuar, pos = self._prompt_position()
+            if not continuar:      # sair (q/s/EOF)
                 return
-            if v.lower() in {"q", "s", "sair"}:
-                return
-            if not v.isdigit() or not (1 <= int(v) <= 9):
-                print("Entrada inválida.")
+            if pos is None:        # inválido -> pede de novo
                 continue
-            if not self.move(int(v) - 1):
+            if not self.move(pos): # casa ocupada
                 print("Casa ocupada.")
                 continue
+
             clear()
             self.draw()
             w = self.winner()
             if w:
-                if w == "empate":
-                    print("Deu velha! ✨")
-                else:
-                    print(f"Jogador '{w}' venceu! 🎉")
+                print("Deu velha! ✨" if w == "empate" else f"Jogador '{w}' venceu! 🎉")
                 pause()
                 return
-
 
 # ---------------------------------------------------------------------------
 # Interfaces de cada módulo (menus simples)
 # ---------------------------------------------------------------------------
 
-def ui_tasks() -> None: # pragma: no cover
+def _task_row(t: Task) -> List[Any]:  # pragma: no cover
+    return [t.id, "✔" if t.done else " ", t.title, t.priority, t.due or "", ",".join(t.tags)]
+
+def _tasks_list(tm: TaskManager) -> None:  # pragma: no cover
+    tag = input("Filtro por tag (opcional): ").strip() or None
+    order = input("Ordenar por [priority/due/id]: ").strip() or "priority"
+    rows = [_task_row(t) for t in tm.list(tag=tag, order=order)]
+    print(pretty_table(rows, TASK_HEADERS))
+    pause()
+
+def _tasks_add(tm: TaskManager) -> None:  # pragma: no cover
+    title = input_nonempty("Título: ")
+    pri = input("Prioridade (1-5) [3]: ").strip() or "3"
+    due = input("Prazo (yyyy-mm-dd) [vazio]: ").strip() or None
+    tags = [t.strip() for t in input("Tags separadas por vírgula: ").split(",") if t.strip()]
+    t = tm.add(title, int(pri), due, tags)
+    print(f"Criado: {t}")
+    pause()
+
+def _tasks_toggle(tm: TaskManager) -> None:  # pragma: no cover
+    tid = input("ID: ").strip()
+    print("OK" if tm.toggle(int(tid)) else MSG_NOT_FOUND)
+    pause()
+
+def _tasks_edit(tm: TaskManager) -> None:  # pragma: no cover
+    tid = int(input("ID: ").strip())
+    title = input("Novo título (enter p/ manter): ").strip() or None
+    pri = input("Nova prioridade (1-5, enter p/ manter): ").strip()
+    due = input("Novo prazo (yyyy-mm-dd, enter p/ manter): ").strip()
+    tags = input("Novas tags (csv, enter p/ manter): ").strip()
+    ok = tm.edit(
+        tid,
+        title=title,
+        priority=int(pri) if pri else None,
+        due=due or None,
+        tags=[t.strip() for t in tags.split(",")] if tags else None,
+    )
+    print("Atualizado" if ok else MSG_NOT_FOUND)
+    pause()
+
+def _tasks_delete(tm: TaskManager) -> None:  # pragma: no cover
+    tid = input("ID: ").strip()
+    print("Excluído" if tm.delete(int(tid)) else MSG_NOT_FOUND)
+    pause()
+
+
+def ui_tasks() -> None:  # pragma: no cover
     tm = TaskManager()
+    actions = {
+        "1": lambda: _tasks_list(tm),
+        "2": lambda: _tasks_add(tm),
+        "3": lambda: _tasks_toggle(tm),
+        "4": lambda: _tasks_edit(tm),
+        "5": lambda: _tasks_delete(tm),
+    }
     while True:
         clear()
         header("Tarefas")
-        print("1) Listar\n2) Adicionar\n3) Alternar status\n4) Editar\n5) Excluir\n0) Voltar")
+        print(TASK_MENU)
         op = input("> ").strip()
-        if op == "1":
-            tag = input("Filtro por tag (opcional): ").strip() or None
-            order = input("Ordenar por [priority/due/id]: ").strip() or "priority"
-            rows = [[t.id, "✔" if t.done else " ", t.title, t.priority, t.due or "", ",".join(t.tags)] for t in tm.list(tag=tag, order=order)]
-            print(pretty_table(rows, ["ID", "OK", "Título", "Pri", "Prazo", "Tags"]))
-            pause()
-        elif op == "2":
-            title = input_nonempty("Título: ")
-            pri = input("Prioridade (1-5) [3]: ").strip() or "3"
-            due = input("Prazo (yyyy-mm-dd) [vazio]: ").strip() or None
-            tags = [t.strip() for t in input("Tags separadas por vírgula: ").split(",") if t.strip()]
-            t = tm.add(title, int(pri), due, tags)
-            print(f"Criado: {t}")
-            pause()
-        elif op == "3":
-            tid = input("ID: ").strip()
-            print("OK" if tm.toggle(int(tid)) else "Não encontrado")
-            pause()
-        elif op == "4":
-            tid = int(input("ID: ").strip())
-            title = input("Novo título (enter p/ manter): ").strip() or None
-            pri = input("Nova prioridade (1-5, enter p/ manter): ").strip()
-            due = input("Novo prazo (yyyy-mm-dd, enter p/ manter): ").strip()
-            tags = input("Novas tags (csv, enter p/ manter): ").strip()
-            ok = tm.edit(tid,
-                         title=title,
-                         priority=int(pri) if pri else None,
-                         due=due or None,
-                         tags=[t.strip() for t in tags.split(",")] if tags else None)
-            print("Atualizado" if ok else "Não encontrado")
-            pause()
-        elif op == "5":
-            tid = input("ID: ").strip()
-            print("Excluído" if tm.delete(int(tid)) else "Não encontrado")
-            pause()
-        elif op == "0":
+        if op == "0":
             return
-        else:
-            print("Opção inválida.")
+        action = actions.get(op)
+        if not action:
+            print(MSG_INVALID)
             pause()
+            continue
+        action()
 
 
-def ui_notes() -> None: # pragma: no cover
+
+def _note_row_list(n: "Note") -> list:  # pragma: no cover
+    return [n.id, n.title, ",".join(n.tags), n.created_at]
+
+def _note_row_search(n: "Note") -> list:  # pragma: no cover
+    return [n.id, n.title, textwrap.shorten(n.body, 60), ",".join(n.tags)]
+
+def _read_multiline(end_marker: str = "::fim") -> str:  # pragma: no cover
+    print(f"Digite o corpo (finalize com uma linha contendo apenas '{end_marker}'):")
+    body_lines: list[str] = []
+    while True:
+        line = input()
+        if line.strip() == end_marker:
+            break
+        body_lines.append(line)
+    return "\n".join(body_lines)
+
+def _notes_list(nm: "NotesManager") -> None:  # pragma: no cover
+    tag = input("Filtro por tag (opcional): ").strip() or None
+    rows = [_note_row_list(n) for n in nm.list(tag)]
+    print(pretty_table(rows, NOTE_HEADERS_LIST))
+    pause()
+
+def _notes_add(nm: "NotesManager") -> None:  # pragma: no cover
+    title = input_nonempty(f"{UI_LBL_TITLE}: ")
+    body = _read_multiline()
+    tags = [t.strip() for t in input("Tags (csv): ").split(",") if t.strip()]
+    n = nm.add(title, body, tags)
+    print(f"Criada nota {n.id}")
+    pause()
+
+def _notes_delete(nm: "NotesManager") -> None:  # pragma: no cover
+    nid = input("ID: ").strip()
+    print("Excluída" if nm.delete(int(nid)) else MSG_NOT_FOUND)
+    pause()
+
+def _notes_search(nm: "NotesManager") -> None:  # pragma: no cover
+    q = input_nonempty("Buscar por: ")
+    rows = [_note_row_search(n) for n in nm.search(q)]
+    print(pretty_table(rows, NOTE_HEADERS_SEARCH))
+    pause()
+
+
+def ui_notes() -> None:  # pragma: no cover
     nm = NotesManager()
+    actions = {
+        "1": lambda: _notes_list(nm),
+        "2": lambda: _notes_add(nm),
+        "3": lambda: _notes_delete(nm),
+        "4": lambda: _notes_search(nm),
+    }
     while True:
         clear()
         header("Notas")
-        print("1) Listar\n2) Adicionar\n3) Excluir\n4) Buscar\n0) Voltar")
+        print(NOTE_MENU)
         op = input("> ").strip()
-        if op == "1":
-            tag = input("Filtro por tag (opcional): ").strip() or None
-            rows = [[n.id, n.title, ",".join(n.tags), n.created_at] for n in nm.list(tag)]
-            print(pretty_table(rows, ["ID", "Título", "Tags", "Criado"]))
-            pause()
-        elif op == "2":
-            title = input_nonempty("Título: ")
-            print("Digite o corpo (finalize com uma linha contendo apenas '::fim'):")
-            body_lines = []
-            while True:
-                line = input()
-                if line.strip() == "::fim":
-                    break
-                body_lines.append(line)
-            tags = [t.strip() for t in input("Tags (csv): ").split(",") if t.strip()]
-            n = nm.add(title, "\n".join(body_lines), tags)
-            print(f"Criada nota {n.id}")
-            pause()
-        elif op == "3":
-            nid = input("ID: ").strip()
-            print("Excluída" if nm.delete(int(nid)) else "Não encontrada")
-            pause()
-        elif op == "4":
-            q = input_nonempty("Buscar por: ")
-            rows = [[n.id, n.title, textwrap.shorten(n.body, 60), ",".join(n.tags)] for n in nm.search(q)]
-            print(pretty_table(rows, ["ID", "Título", "Prévia", "Tags"]))
-            pause()
-        elif op == "0":
+        if op == "0":
             return
-        else:
-            print("Opção inválida.")
+        action = actions.get(op)
+        if not action:
+            print(MSG_INVALID)
             pause()
+            continue
+        action()
+
+def _habits_list(hb: "HabitTracker") -> None:  # pragma: no cover
+    today = dt.date.today().isoformat()
+    rows = []
+    for h in hb.list():
+        mark = "✔" if h.records.get(today) else " "
+        rows.append([h.name, mark, len(h.records)])
+    print(pretty_table(rows, HABIT_HEADERS))
+    pause()
+
+def _habits_add(hb: "HabitTracker") -> None:  # pragma: no cover
+    name = input_nonempty("Nome do hábito: ")
+    hb.add(name)
+    print("Adicionado.")
+    pause()
+
+def _habits_mark_today(hb: "HabitTracker") -> None:  # pragma: no cover
+    name = input_nonempty("Hábito: ")
+    hb.mark(name)
+    print("Marcado para hoje.")
+    pause()
+
+def _habits_stats(hb: "HabitTracker") -> None:  # pragma: no cover
+    name = input_nonempty("Hábito: ")
+    y = input("Ano (YYYY): ").strip()
+    m = input("Mês (1-12): ").strip()
+    year = int(y) if y else dt.date.today().year
+    month = int(m) if m else dt.date.today().month
+    done, total, perc = hb.monthly_stats(name, year, month)
+    print(f"Concluídos {done}/{total} ({perc:.1f}%)")
+    pause()
 
 
-def ui_habits() -> None: # pragma: no cover
+def ui_habits() -> None:  # pragma: no cover
     hb = HabitTracker()
+    actions = {
+        "1": lambda: _habits_list(hb),
+        "2": lambda: _habits_add(hb),
+        "3": lambda: _habits_mark_today(hb),
+        "4": lambda: _habits_stats(hb),
+    }
     while True:
         clear()
         header("Hábitos")
-        print("1) Listar\n2) Adicionar hábito\n3) Marcar hoje\n4) Estatísticas do mês\n0) Voltar")
+        print(HABIT_MENU)
         op = input("> ").strip()
-        if op == "1":
-            rows = []
-            today = dt.date.today().isoformat()
-            for h in hb.list():
-                mark = "✔" if h.records.get(today) else " "
-                rows.append([h.name, mark, len(h.records)])
-            print(pretty_table(rows, ["Hábito", "Hoje", "Dias marcados"]))
-            pause()
-        elif op == "2":
-            name = input_nonempty("Nome do hábito: ")
-            hb.add(name)
-            print("Adicionado.")
-            pause()
-        elif op == "3":
-            name = input_nonempty("Hábito: ")
-            hb.mark(name)
-            print("Marcado para hoje.")
-            pause()
-        elif op == "4":
-            name = input_nonempty("Hábito: ")
-            year = int(input("Ano (YYYY): ").strip() or dt.date.today().year)
-            month = int(input("Mês (1-12): ").strip() or dt.date.today().month)
-            done, total, perc = hb.monthly_stats(name, year, month)
-            print(f"Concluídos {done}/{total} ({perc:.1f}%)")
-            pause()
-        elif op == "0":
+        if op == "0":
             return
-        else:
-            print("Opção inválida.")
+        action = actions.get(op)
+        if not action:
+            print(MSG_INVALID)
             pause()
+            continue
+        action()
+
 
 
 def ui_calc() -> None: # pragma: no cover
@@ -760,39 +868,45 @@ def ui_calc() -> None: # pragma: no cover
             print("Erro:", e)
         pause()
 
+def _text_stats() -> None:  # pragma: no cover
+    text = _read_multiline()
+    stats = TextUtils.word_stats(text)
+    rows = [[k, v] for k, v in stats.items()]
+    print(pretty_table(rows, TEXT_HEADERS))
+    pause()
 
-def ui_text() -> None: # pragma: no cover
+def _text_palindrome() -> None:  # pragma: no cover
+    s = input_nonempty("Texto: ")
+    print("É palíndromo?", "Sim" if TextUtils.is_palindrome(s) else "Não")
+    pause()
+
+def _text_anagrams() -> None:  # pragma: no cover
+    word = input_nonempty("Palavra base: ")
+    cand = [c.strip() for c in input("Candidatos (csv): ").strip().split(",")]
+    found = TextUtils.anagrams(word, [c for c in cand if c])
+    print("Anagramas:", ", ".join(found) if found else TEXT_NONE)
+    pause()
+
+
+def ui_text() -> None:  # pragma: no cover
+    actions = {
+        "1": _text_stats,
+        "2": _text_palindrome,
+        "3": _text_anagrams,
+    }
     while True:
         clear()
         header("Texto — utilidades")
-        print("1) Contagem de palavras/linhas/caracteres\n2) Verificar palíndromo\n3) Procurar anagramas\n0) Voltar")
+        print(TEXT_MENU)
         op = input("> ").strip()
-        if op == "1":
-            print("Cole/Digite o texto (fim com '::fim'):")
-            lines = []
-            while True:
-                line = input()
-                if line.strip() == "::fim":
-                    break
-                lines.append(line)
-            stats = TextUtils.word_stats("\n".join(lines))
-            rows = [[k, v] for k, v in stats.items()]
-            print(pretty_table(rows, ["Métrica", "Valor"]))
-            pause()
-        elif op == "2":
-            s = input_nonempty("Texto: ")
-            print("É palíndromo?", "Sim" if TextUtils.is_palindrome(s) else "Não")
-            pause()
-        elif op == "3":
-            word = input_nonempty("Palavra base: ")
-            cand = input("Candidatos (csv): ").strip().split(",")
-            print("Anagramas:", ", ".join(TextUtils.anagrams(word, [c.strip() for c in cand if c.strip()])) or "(nenhum)")
-            pause()
-        elif op == "0":
+        if op == "0":
             return
-        else:
-            print("Opção inválida.")
+        action = actions.get(op)
+        if not action:
+            print(MSG_INVALID)
             pause()
+            continue
+        action()
 
 
 def ui_convert() -> None: # pragma: no cover
@@ -817,41 +931,53 @@ def ui_convert() -> None: # pragma: no cover
             elif op == "0":
                 return
             else:
-                print("Opção inválida.")
+                print(MSG_INVALID)
                 pause()
         except Exception as e:
             print("Erro:", e)
             pause()
 
+def _files_show_plan() -> None:  # pragma: no cover
+    base = Path(input_nonempty("Diretório base: "))
+    org = FileOrganizer(base)
+    plan = org.plan()
+    rows = []
+    for ext, files in plan.items():
+        preview = ", ".join(files[:5]) + (" ..." if len(files) > 5 else "")
+        rows.append([ext, len(files), preview])
+    print(pretty_table(rows, FILES_HEADERS))
+    pause()
 
-def ui_files() -> None: # pragma: no cover
+def _files_apply_moves() -> None:  # pragma: no cover
+    base = Path(input_nonempty("Diretório base: "))
+    org = FileOrganizer(base)
+    print(FILES_CONFIRM_MSG)
+    if not confirm():
+        return
+    moves = org.apply(simulate=False)
+    print(f"Movidos {len(moves)} arquivos.")
+    pause()
+
+
+def ui_files() -> None:  # pragma: no cover
+    actions = {
+        "1": _files_show_plan,
+        "2": _files_apply_moves,
+    }
     while True:
         clear()
         header("Organizador de Arquivos")
-        print("1) Ver plano\n2) Aplicar (mover)\n0) Voltar")
+        print(FILES_MENU)
         op = input("> ").strip()
-        if op not in {"1", "2", "0"}:
-            print("Opção inválida.")
-            pause()
-            continue
         if op == "0":
             return
-        base = Path(input_nonempty("Diretório base: "))
-        org = FileOrganizer(base)
-        if op == "1":
-            plan = org.plan()
-            rows = []
-            for ext, files in plan.items():
-                rows.append([ext, len(files), ", ".join(files[:5]) + (" ..." if len(files) > 5 else "")])
-            print(pretty_table(rows, ["Extensão", "Qtd", "Exemplos"]))
+        action = actions.get(op)
+        if not action:
+            print(MSG_INVALID)
             pause()
-        else:
-            print("Isso moverá arquivos para subpastas por extensão. Continuar?")
-            if not confirm():
-                continue
-            moves = org.apply(simulate=False)
-            print(f"Movidos {len(moves)} arquivos.")
-            pause()
+            continue
+        action()
+
 
 
 def ui_timer() -> None: # pragma: no cover
@@ -876,7 +1002,7 @@ def ui_timer() -> None: # pragma: no cover
         elif op == "0":
             return
         else:
-            print("Opção inválida.")
+            print(MSG_INVALID)
             pause()
 
 
@@ -906,7 +1032,7 @@ def ui_addressbook() -> None: # pragma: no cover
         elif op == "0":
             return
         else:
-            print("Opção inválida.")
+            print(MSG_INVALID)
             pause()
 
 
@@ -931,9 +1057,21 @@ MENU_ITEMS = [
 ]
 
 
-def main(argv: Optional[List[str]] = None) -> int: # pragma: no cover
+def main(argv: Optional[List[str]] = None) -> int:  # pragma: no cover
+    """
+    Ponto de entrada da CLI.
+    Códigos de saída:
+      0 = saída normal
+      2 = erro de entrada do usuário (MSG_INVALID)
+     130 = interrupção (Ctrl+C/EOF)
+    """
     parser = argparse.ArgumentParser(description=APP_NAME)
-    parser.add_argument("--auto", choices=["tasks", "notes", "habits", "calc", "text", "convert", "files", "timer", "address", "tictactoe"], help="Abrir módulo diretamente", default=None)
+    parser.add_argument(
+        "--auto",
+        choices=["tasks", "notes", "habits", "calc", "text", "convert", "files", "timer", "address", "tictactoe"],
+        help="Abrir módulo diretamente",
+        default=None,
+    )
     args = parser.parse_args(argv)
 
     if args.auto:
@@ -949,9 +1087,10 @@ def main(argv: Optional[List[str]] = None) -> int: # pragma: no cover
             "address": ui_addressbook,
             "tictactoe": ui_tictactoe,
         }
-        mapping[args.auto]()
-        return 0
+        mapping[args.auto]()   
+        return 0               
 
+    exit_code = 0
     while True:
         clear()
         header(f"{APP_NAME} — menu principal")
@@ -962,16 +1101,25 @@ def main(argv: Optional[List[str]] = None) -> int: # pragma: no cover
             choice = input("> ").strip()
         except (EOFError, KeyboardInterrupt):
             print("\nAté mais!")
-            return 0
+            exit_code = 130  
+            break
+
         if choice == "0":
             print("Até mais!")
-            return 0
+            exit_code = 0
+            break
+
         if not choice.isdigit() or not (1 <= int(choice) <= len(MENU_ITEMS)):
-            print("Opção inválida.")
+            print(MSG_INVALID)
             pause()
+            exit_code = 2     
             continue
+
         _, fn = MENU_ITEMS[int(choice) - 1]
         fn()
+
+    return exit_code
+
 
 
 if __name__ == "__main__":
