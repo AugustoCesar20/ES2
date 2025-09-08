@@ -579,6 +579,7 @@ class TicTacToe:
         self.board = [" "] * 9
         self.current = "X"
 
+
     def _prompt_position(self) -> tuple[bool, Optional[int]]:  # pragma: no cover
         """
         Retorna (continuar, posicao).
